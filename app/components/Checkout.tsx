@@ -1,25 +1,63 @@
-"use client"
+import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
+import React, { useState } from 'react';
 
-import { Button } from "@/components/ui/button"
-import { useShoppingCart } from "use-shopping-cart"
-import { urlFor } from "../lib/sanity";
+interface CheckoutProps {
+  roundedTotalPrice: number;
+}
 
-export default function CheckoutNow({currency, description, image, name, price, price_id}: ProductCart) {
-    const {checkoutSingleItem} = useShoppingCart()
-    function buyNow(price_id:string) {
-        checkoutSingleItem(price_id)
+const Checkout: React.FC<CheckoutProps> = ({ roundedTotalPrice }) => {
+    const [{ options, isPending }, dispatch] = usePayPalScriptReducer();
+
+    const [currency, setCurrency] = useState(options.currency);
+
+    const onCurrencyChange = ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>) => {
+        setCurrency(value);
+        dispatch({
+            type: "resetOptions",
+            value: {
+                ...options,
+                currency: value,
+            },
+        });
     }
-    const product = {
-        name: name,
-        description: description,
-        price: price,
-        currency: currency,
-        image: urlFor(image).url(),
-        price_id: price_id,
+
+    const onCreateOrder = (data: any, actions: any) => {
+        return actions.order.create({
+            purchase_units: [
+                {
+                    amount: {
+                        value: roundedTotalPrice.toString(),
+                        currency_code: "EUR",
+                    },
+                },
+            ],
+        });
     }
-    return(
-        <Button
-            onClick={() => buyNow(product.price_id)}
-        >Pridať do košíka</Button>
+
+    const onApproveOrder = (data: any,actions: any) => {
+    return actions.order.capture().then((details: any) => {
+    const name = details.payer.name.given_name;
+        alert(`Transaction completed by ${name}`);
+    });
+    }
+
+    return (
+        <div>
+            {isPending ? <p>LOADING...</p> : (
+                <>
+                <select value={currency} onChange={onCurrencyChange} hidden>
+                    <option value="USD">💵 USD</option>
+                    <option value="EUR" >💶 Euro</option>
+                </select>
+                <PayPalButtons 
+                    style={{ layout: "vertical" }}
+                    createOrder={(data, actions) => onCreateOrder(data, actions)}
+                    onApprove={(data, actions) => onApproveOrder(data, actions)}
+                    />
+                </>
+            )}
+        </div>
     )
 }
+
+export default Checkout;

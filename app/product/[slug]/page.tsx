@@ -1,5 +1,5 @@
 import AddToCart from "@/app/components/AddToCart"
-import ImageGallery from "@/app/components/imageGallery"
+import ImageGallery from "@/app/components/ImageGallery"
 import { fullProduct } from "@/app/interface"
 import { client } from "@/app/lib/sanity"
 import { Button } from "@/components/ui/button"
